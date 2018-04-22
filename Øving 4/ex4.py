@@ -7,6 +7,7 @@ from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 
 def logistic_z(z):
+    a = 1
     return 1.0/(1.0+np.exp(-z))
 
 def logistic_wx(w,x):
