@@ -12,50 +12,55 @@ def logistic_z(z):
 def logistic_wx(w,x):
     return logistic_z(np.inner(w,x))
 
-def gradLSimple(w):
-    # dL1 = 2*(logistic_wx(w,[1,0])-1)*logistic_wx(w,[1,0])*(1-logistic_wx(w,[1,0])) + 2*(logistic_wx(w,[1,1])-1)*logistic_wx(w,[1,1])*(1-logistic_wx(w,[1,1]))
-    # dL2 = 2*(logistic_wx(w,[0,1])-1)*logistic_wx(w,[0,1])*(1-logistic_wx(w,[0,1])) + 2*(logistic_wx(w,[1,1])-1)*logistic_wx(w,[1,1])*(1-logistic_wx(w,[1,1]))
+def sigmoid(w,x):
+    return logistic_z(np.inner(w,x))
 
+def gradLSimple(w):
      dL11 = 2*(logistic_wx(w,[1,0])-1)*np.exp(-1*w[0])*pow(logistic_wx(w,[1,0]),2)
      dL12 = 2*(logistic_wx(w,[1,1])-1)*np.exp(-w[0]-w[1])*pow(logistic_wx(w,[1,1]),2)
      dL1  = dL11 + dL12
-    #
+
      dL21 = 2*(logistic_wx(w,[0,1]))*np.exp(-1*w[1])*pow(logistic_wx(w,[0,1]),2)
      dL22 = 2*(logistic_wx(w,[1,1])-1)*np.exp(-w[0]-w[1])*pow(logistic_wx(w,[1,1]),2)
      dL2  = dL21 + dL22
 
-    return np.array([dL1,dL2])
+     return np.array([dL1,dL2])
 
-
-
-    #w1 = w[0]
-    #w2 = w[1]
-    #L1 = -2*((np.exp(-2*w1))/pow((1+np.exp(-1*w1)),3) + np.exp(-2*(w1+w2))/pow((1+np.exp(-1*(w1+w2))),3))
-    #L2 =  2*((np.exp(-2*w2))/pow((1+np.exp(-1*w2)),3) - np.exp(-2*(w1+w2))/pow((1+np.exp(-1*(w1+w2))),3))
-
-
-    #L2 = 2*((np.exp(-2*w2))/np.pow((1+np.exp(-1*w2)),3) - np.exp(-2*(w1+w2))/np.pow((1+np.exp(-1*(w1+w2))),3)
-
-def gradientDescent(ny,wStart):
+def gradientDescent(ny,wStart,doPlot):
     steps = 0
     wOld = wStart
     wNew = np.zeros((1,2))
+    w1History = [wStart[0]]
+    w2History = [wStart[1]]
+    LHistory = [LSimple(wStart)]
     while True:
         dummy = gradLSimple(wOld)
         dummy[0] = dummy[0] * ny
         dummy[1] = dummy[1] * ny
         wNew = wOld - dummy
+        w1History = np.append(w1History,wNew[0])
+        w2History = np.append(w2History,wNew[1])
+        LHistory = np.append(LHistory,LSimple(wNew))
         steps = steps + 1
-        #if (((wNew[0]-wOld[0]) < threshold) and ((wNew[1] - wOld[1]) <threshold)):
-        #    break
         if steps > 1000:
-            print('Too many steps, we done now boys')
             break
         wOld = wNew
-    #print ('Used {} steps to converge'.format(steps))
+
+
     print ('Stopped serching at w1 = {}, w2 = {}'.format(wNew[0],wNew[1]))
     L = LSimple([wNew[0],wNew[1]])
     print ('Here L was {}'.format(L))
+    if doPlot:
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
+        labelText = 'n = {}'.format(ny)
+        print(len(w1History))
+        ax.plot(w1History, w2History, LHistory, label=labelText)
+        ax.legend()
+        plt.show()
+
+
+
 
 def LSimple(w):
     if not len(w) == 2:
@@ -121,11 +126,10 @@ w1 = np.arange(-6,6,0.1)
 w2 = np.arange(-6,6,0.1)
 
 
-n = 10
+n = 0.1
 
 wStart = np.array([0,0])
-plotLSimple(w1,w2,False)
-gradientDescent(n,wStart)
+gradientDescent(n,wStart,True)
 
 # def train_and_plot(xtrain,ytrain,xtest,ytest,training_method,learn_rate=0.1,niter=10):
 #     plt.figure()
