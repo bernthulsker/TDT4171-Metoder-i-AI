@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
 import csv
+import time
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -18,8 +19,7 @@ def classify(w,x):
     return 0 if (logistic_wx(w,x)<0.5) else 1
 
 def gradL(x,y,w,xi):
-    return ((logistic_wx(w,x)-y)*xi*logistic_wx(w,x)*(1-logistic_wx(w,x)))
-    #(logistic_wx(w,xn) - yn) * xi * np.exp(-np.inner(w,xn)) * pow(logistic_wx(w,xn),2)
+    return (logistic_wx(w,x) - y) * xi * np.exp(-np.inner(w,x)) * pow(logistic_wx(w,x),2)
 
 def stochast_train_w(x_train,y_train,learn_rate=0.1,niter=1000):
     x_train=np.hstack((np.array([1]*x_train.shape[0]).reshape(x_train.shape[0],1),x_train))
@@ -45,14 +45,15 @@ def batch_train_w(x_train,y_train,learn_rate=0.1,niter=50):
     w = np.random.rand(dim)
     index_lst=[]
     for it in range(niter):
-        print(it)
+        if not(it % 10):
+            print(it)
         for i in range(dim):
-            update_grad=0.0
+            update_grad=0
             for n in range(num_n):
-                y = x_train[n]
+                y = y_train[n]
                 x = x_train[n]
-                update_grad += (logistic_wx(w,x)-y)*x*logistic_wx(w,x)*(1-logistic_wx(w,x))
-            w[i] -= learn_rate * update_grad[i] *(1/num_n)
+                update_grad += gradL(x,y,w[i],x[i])[i]
+            w[i] -= learn_rate * update_grad *(1/num_n)
     return w
 
 def getData(fileName):
@@ -61,8 +62,15 @@ def getData(fileName):
     with open(fileName, newline='') as f:
         reader = csv.reader(f,delimiter = '\t',quotechar =',')
         for row in reader:
-            x1 = float(row[0][1:])
+            x1 = 0
+            if row[0][0] == '-':
+                x1 = float(row[0][1:])
+                x1 = -x1
+            else:
+                x1 = float(row[0])
             x2 = float(row[1])
+            if row[1][0] =='-':
+                x2 = -x2
             x.append([x1,x2])
             y.append(float(row[2][0]))
     x = np.array(x)
@@ -71,7 +79,7 @@ def getData(fileName):
     return(x,y)
 
 def train_and_plot(xtrain,ytrain,xtest,ytest,training_method,learn_rate=0.1,niter=1000):
-    plt.figure()
+    start_time = time.time()
     #train data
     data = pd.DataFrame(np.hstack((xtrain,ytrain.reshape(xtrain.shape[0],1))),columns=['x','y','lab'])
     ax=data.plot(kind='scatter',x='x',y='y',c='lab',cmap=cm.copper,edgecolors='black')
@@ -87,10 +95,22 @@ def train_and_plot(xtrain,ytrain,xtest,ytest,training_method,learn_rate=0.1,nite
     data_test = pd.DataFrame(np.hstack((xtest,y_est.reshape(xtest.shape[0],1))),columns=['x','y','lab'])
     data_test.plot(kind='scatter',x='x',y='y',c='lab',ax=ax,cmap=cm.coolwarm,edgecolors='black')
     print ("error={}".format(np.mean(error)))
+    print("--- %s seconds ---" % (time.time() - start_time))
     plt.show()
 
     return w
 
-(xTrain,yTrain) = getData("data_big_separable_train.csv")
-(xTest,yTest)   = getData("data_big_separable_test.csv")
-w = train_and_plot(xTrain,yTrain,xTest,yTest,stochast_train_w)
+(xTrain,yTrain) = getData("data_big_nonsep_train.csv")
+(xTest,yTest) = getData("data_big_nonsep_test.csv")
+
+
+iterList = [10,20,50,100,200,500]
+
+
+
+for it in iterList:
+    print("Numer of its= {}".format(it))
+    train_and_plot(xTrain,yTrain,xTest,yTest,stochast_train_w,niter = it)
+
+
+#w2 = train_and_plot(xTrain,yTrain,xTest,yTest,batch_train_w,niter = 100)
